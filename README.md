@@ -1,4 +1,5 @@
 # A simple example of extrinsic camera calibration using point-line calibration with PoseLib
+The example is test_robust_p3ll.cpp
 ## PoseLib
 This library provides a collection of minimal solvers for camera pose estimation. The focus is on calibrated absolute pose estimation problems from different types of correspondences (e.g. point-point, point-line, line-point, line-line).
 
