@@ -26,7 +26,7 @@ int main()
     points3D.emplace_back(-2.0,-1.0, 0.0);//G
     points3D.emplace_back(-2.0,-2.0, 0.0);//H
 
-    //list 3D new
+    //list 3D new ok
     std::vector<poselib::Point3D> points3D0;
     points3D0.emplace_back(3.8, -2.5, 0.0);//A
     points3D0.emplace_back(2.4, -1.5, 0.0);//B
