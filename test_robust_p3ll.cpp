@@ -7,6 +7,7 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <chrono>
+#include <random>
 
 //camera OpenCVCameraModel: fx = , fy, cx, cy, k1, k2, p1, p2
 //%YAML:1.0
@@ -64,6 +65,12 @@ int main(){
     //print camera pose
     std::cout << "world to cam: quat = " << camera_pose.q.transpose() << "\n t = " << camera_pose.t.transpose() << "\n";
 
+    std::random_device rd{};
+    //std::default_random_engine generator;
+    std::mt19937 generator{rd()};
+
+    std::normal_distribution<double> distribution(0.0,1.0);
+
     //projection of points to 2D image
     std::vector<poselib::Point2D> points2D;
     for (auto &point3D : points3D) {
@@ -77,9 +84,9 @@ int main(){
         //project point2D_unit to image plane
         camera.project(point2D_unit, &point2D);
         //add noise to point2D randomly from 1-20
-        auto random = (double)rand() / RAND_MAX;
+        auto random = distribution(generator);
         point2D[0] += 5*random;
-        point2D[1] += 5*random;
+        point2D[1] += 4*random;
         points2D.push_back(point2D);
         //print point2D
         std::cout << "point2D = " << point2D.transpose() << "\n";
@@ -126,8 +133,9 @@ int main(){
     poselib::RansacOptions ransac_opt;
     poselib::BundleOptions bundle_opt;
 
-    ransac_opt.max_reproj_error = 10.0;
-    ransac_opt.max_iterations = 300.0;
+    ransac_opt.max_reproj_error = 12.0;
+    ransac_opt.max_epipolar_error = 1.0;
+    ransac_opt.max_iterations = 3000.0;
     bundle_opt.verbose = true;
     //show ransac_opt
     std::cout << "ransac_opt:\n";

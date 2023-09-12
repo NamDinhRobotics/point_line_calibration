@@ -7,6 +7,9 @@
 #include <Eigen/Dense>
 #include <vector>
 #include <chrono>
+#include <random>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/calib3d.hpp>
 
 //camera OpenCVCameraModel: fx = , fy, cx, cy, k1, k2, p1, p2
 int main()
@@ -22,6 +25,13 @@ int main()
     points3D.emplace_back(-2.0,1.0, 0.0);//F
     points3D.emplace_back(-2.0,-1.0, 0.0);//G
     points3D.emplace_back(-2.0,-2.0, 0.0);//H
+
+    //list 3D new
+    std::vector<poselib::Point3D> points3D0;
+    points3D0.emplace_back(3.8, -2.5, 0.0);//A
+    points3D0.emplace_back(2.4, -1.5, 0.0);//B
+    points3D0.emplace_back(3.2, 1.2, 0.0);//C
+    points3D0.emplace_back(4.4, 2.4, 0.4);//D
 
     //camera model
     poselib::Camera camera;
@@ -48,6 +58,10 @@ int main()
     poselib::CameraPose camera_pose{q.toRotationMatrix(), t};
     //print camera pose
     std::cout << "world to cam: quat = " << camera_pose.q.transpose() << "\n t = " << camera_pose.t.transpose() << "\n";
+    std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::normal_distribution d{0.0, 1.0};
+    //add noise to camera pose
 
     //projection of points to 2D image
     std::vector<poselib::Point2D> points2D;
@@ -62,12 +76,29 @@ int main()
         //project point2D_unit to image plane
         camera.project(point2D_unit, &point2D);
         //add noise to point2D randomly from 1-20
-        auto random = (double)rand() / RAND_MAX;
-        point2D[0] += 5*random;
-        point2D[1] += 5*random;
+        //auto random = (double)rand() / RAND_MAX;
+        point2D[0] += 1.0*d(gen);
+        point2D[1] += 1.0*d(gen);
         points2D.push_back(point2D);
         //print point2D
-        std::cout << "point2D = " << point2D.transpose() << "\n";
+        std::cout << "random " << 5*d(gen) <<" point2D = " << point2D.transpose() << "\n";
+    }
+
+    //list point2D0
+    std::vector<poselib::Point2D> points2D0;
+    for(auto &point3:points3D0){
+        poselib::Point2D point2;
+        //project point3D to unit plane
+        Eigen::Vector2d point2D_unit;
+        //transform point3D from world to camera coordinate system: T_c = R_cw*T_w + t_cw
+        Eigen::Vector3d point3D_camera = camera_pose.R()*point3 + camera_pose.t;
+        point2D_unit << point3D_camera[0]/point3D_camera[2], point3D_camera[1]/point3D_camera[2];
+        //project point2D_unit to image plane
+        camera.project(point2D_unit, &point2);
+        //add noise to point2D randomly from 1-20
+        point2[0] += 1.0*d(gen);
+        point2[1] += 1.0*d(gen);
+        points2D0.push_back(point2);
     }
     //make three 3D lines from three 3D points
     std::vector<poselib::Line3D> lines3D;
@@ -83,11 +114,25 @@ int main()
     //E to D
     Eigen::Vector3d V_ED = points3D[3] - points3D[4];
     Eigen::Vector3d X_ED = points3D[4];
+
+    //add line AD
+    Eigen::Vector3d V_AD = points3D[3] - points3D[0];
+    Eigen::Vector3d X_AD = points3D[0];
+    //HE
+    Eigen::Vector3d V_HE = points3D[4] - points3D[7];
+    Eigen::Vector3d X_HE = points3D[7];
+
     //push back to lines3D
     lines3D.emplace_back(X_HA, V_HA);
     lines3D.emplace_back(X_GB, V_GB);
     lines3D.emplace_back(X_FC, V_FC);
     lines3D.emplace_back(X_ED, V_ED);
+
+    //add line AD
+    lines3D.emplace_back(X_AD, V_AD);
+    //add line HE
+    lines3D.emplace_back(X_HE, V_HE);
+
     //make three 2D lines from three 2D points
     std::vector<poselib::Line2D> lines2D;
     //line from H to A
@@ -98,14 +143,20 @@ int main()
     lines2D.emplace_back(points2D[2], points2D[5]);
     //E to D
     lines2D.emplace_back(points2D[3], points2D[4]);
+    //add line AD
+    lines2D.emplace_back(points2D[3], points2D[0]);
+    //add line HE
+    lines2D.emplace_back(points2D[4], points2D[7]);
 
 
     //estimate absolute pose using LO-RANSAC followed by non-linear refinement
     poselib::RansacOptions ransac_opt;
     poselib::BundleOptions bundle_opt;
 
-    ransac_opt.max_reproj_error = 10.0;
-    ransac_opt.max_iterations = 300.0;
+    ransac_opt.max_reproj_error = 1.0;
+    ransac_opt.max_epipolar_error = 0.1;
+    //ransac_opt.max_iterations = 3000.0;
+    ransac_opt.min_iterations = 10000;
     bundle_opt.verbose = true;
     //show ransac_opt
     std::cout << "ransac_opt:\n";
@@ -119,15 +170,6 @@ int main()
     poselib::CameraPose pose;
     std::vector<char> inliers;
     //start time
-    //only take use point B, C
-    std::vector<poselib::Point3D> points3D_new;
-    points3D_new.push_back(points3D[0]);
-    points3D_new.push_back(points3D[1]);
-
-    //point2D B, C
-    std::vector<poselib::Point2D> points2D_new;
-    points2D_new.push_back(points2D[0]);
-    points2D_new.push_back(points2D[1]);
     //print points3D and points2D
     std::cout << "points3D:\n";
     for (auto &point3D : points3D) {
@@ -140,7 +182,7 @@ int main()
     //start time
 
     auto start = std::chrono::high_resolution_clock::now();
-    poselib::RansacStats stats = poselib::estimate_absolute_pose_pnpl(points2D_new, points3D_new, lines2D, lines3D, camera, ransac_opt, bundle_opt, &pose, &inliers, &inliers);
+    poselib::RansacStats stats = poselib::estimate_absolute_pose_pnpl(points2D0, points3D0, lines2D, lines3D, camera, ransac_opt, bundle_opt, &pose, &inliers, &inliers);
     //stop time
     auto stop = std::chrono::high_resolution_clock::now();
     //duration in us
@@ -183,6 +225,49 @@ int main()
     //err_q to degree
     double err_q_deg = err_q*180.0/M_PI;
     std::cout << "err_q_deg = " << err_q_deg << "\n";
+
+
+    //using Opencv PnP
+    std::cout << "--------------Opencv PnP---------------\n";
+
+    //convert points3D to cv::Mat
+    cv::Mat points3D_mat = cv::Mat(points3D.size(), 3, CV_64F);
+    for(int i = 0; i < points3D0.size(); i++){
+        points3D_mat.at<double>(i, 0) = points3D0[i][0];
+        points3D_mat.at<double>(i, 1) = points3D0[i][1];
+        points3D_mat.at<double>(i, 2) = points3D0[i][2];
+    }
+    //convert points2D to cv::Mat
+    cv::Mat points2D_mat = cv::Mat(points2D.size(), 2, CV_64F);
+    for(int i = 0; i < points2D0.size(); i++){
+        points2D_mat.at<double>(i, 0) = points2D0[i][0];
+        points2D_mat.at<double>(i, 1) = points2D0[i][1];
+    }
+    //convert camera matrix to cv::Mat
+    cv::Mat camera_mat = cv::Mat(3, 3, CV_64F);
+    camera_mat.at<double>(0, 0) = camera.params[0];
+    camera_mat.at<double>(0, 1) = 0.0;
+    camera_mat.at<double>(0, 2) = camera.params[2];
+    camera_mat.at<double>(1, 0) = 0.0;
+    camera_mat.at<double>(1, 1) = camera.params[1];
+    camera_mat.at<double>(1, 2) = camera.params[3];
+    camera_mat.at<double>(2, 0) = 0.0;
+    camera_mat.at<double>(2, 1) = 0.0;
+    camera_mat.at<double>(2, 2) = 1.0;
+    //convert distCoeffs to cv::Mat
+    cv::Mat distCoeffs = cv::Mat(4, 1, CV_64F);
+    distCoeffs.at<double>(0, 0) = camera.params[4];
+    distCoeffs.at<double>(1, 0) = camera.params[5];
+    distCoeffs.at<double>(2, 0) = camera.params[6];
+    distCoeffs.at<double>(3, 0) = camera.params[7];
+    //convert rvec, tvec to cv::Mat
+    cv::Mat rvec = cv::Mat(3, 1, CV_64F);
+    cv::Mat tvec = cv::Mat(3, 1, CV_64F);
+    //solvePnP
+    cv::solvePnP(points3D_mat, points2D_mat, camera_mat, distCoeffs, rvec, tvec);
+    //print rvec, tvec
+    std::cout << "rvec = " << rvec << "\n";
+    std::cout << "tvec = " << tvec << "\n";
 
     return 0;
 
