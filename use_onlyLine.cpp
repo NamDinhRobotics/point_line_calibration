@@ -16,15 +16,15 @@ int main()
 {
     //list of points in 3D
     std::vector<poselib::Point3D> points3D;
-    points3D.emplace_back(2.0, -2.0, 0.0);//A
-    points3D.emplace_back(2.0, -1.0, 0.0);//B
-    points3D.emplace_back(2.0, 1.0, 0.0);//C
-    points3D.emplace_back(2.0, 2.0, 0.0);//D
+    points3D.emplace_back(3.0, -2.0, 0.0);//A
+    points3D.emplace_back(3.0, -1.0, 0.0);//B
+    points3D.emplace_back(3.0, 1.0, 0.0);//C
+    points3D.emplace_back(3.0, 2.0, 0.0);//D
 
-    points3D.emplace_back(-2.0,2.0, 0.0);//E
-    points3D.emplace_back(-2.0,1.0, 0.0);//F
-    points3D.emplace_back(-2.0,-1.0, 0.0);//G
-    points3D.emplace_back(-2.0,-2.0, 0.0);//H
+    points3D.emplace_back(-3.0,2.0, 0.0);//E
+    points3D.emplace_back(-3.0,1.0, 0.0);//F
+    points3D.emplace_back(-3.0,-1.0, 0.0);//G
+    points3D.emplace_back(-3.0,-2.0, 0.0);//H
 
     //list 3D new ok
     std::vector<poselib::Point3D> points3D0;
@@ -77,8 +77,8 @@ int main()
         camera.project(point2D_unit, &point2D);
         //add noise to point2D randomly from 1-20
         //auto random = (double)rand() / RAND_MAX;
-        point2D[0] += 5.0*d(gen);
-        point2D[1] += 5.0*d(gen);
+        point2D[0] += 1.0*d(gen);
+        point2D[1] += 1.0*d(gen);
         points2D.push_back(point2D);
         //print point2D
         std::cout << "random " << 5*d(gen) <<" point2D = " << point2D.transpose() << "\n";
@@ -96,8 +96,8 @@ int main()
         //project point2D_unit to image plane
         camera.project(point2D_unit, &point2);
         //add noise to point2D randomly from 1-20
-        point2[0] += 5.0*d(gen);
-        point2[1] += 5.0*d(gen);
+        point2[0] += 1.0*d(gen);
+        point2[1] += 1.0*d(gen);
         points2D0.push_back(point2);
     }
     //make three 3D lines from three 3D points
@@ -124,8 +124,8 @@ int main()
 
     //push back to lines3D
     lines3D.emplace_back(X_HA, V_HA);
-    lines3D.emplace_back(X_GB, V_GB);
-    lines3D.emplace_back(X_FC, V_FC);
+    //lines3D.emplace_back(X_GB, V_GB);
+    //lines3D.emplace_back(X_FC, V_FC);
     lines3D.emplace_back(X_ED, V_ED);
 
     //add line AD
@@ -138,9 +138,9 @@ int main()
     //line from H to A
     lines2D.emplace_back(points2D[0], points2D[7]);
     //G to B
-    lines2D.emplace_back(points2D[1], points2D[6]);
+    //lines2D.emplace_back(points2D[1], points2D[6]);
     //F to C
-    lines2D.emplace_back(points2D[2], points2D[5]);
+    //lines2D.emplace_back(points2D[2], points2D[5]);
     //E to D
     lines2D.emplace_back(points2D[3], points2D[4]);
     //add line AD
@@ -153,8 +153,8 @@ int main()
     poselib::RansacOptions ransac_opt;
     poselib::BundleOptions bundle_opt;
 
-    ransac_opt.max_reproj_error = 12.0;
-    ransac_opt.max_epipolar_error = 0.1;
+    ransac_opt.max_reproj_error = 10.0;
+    ransac_opt.max_epipolar_error = 1;
     //ransac_opt.max_iterations = 3000.0;
     ransac_opt.min_iterations = 1000;
     bundle_opt.verbose = true;
