@@ -36,7 +36,7 @@ int main(){
     points3D.emplace_back(2.0, -1.0, 0.0);
     points3D.emplace_back(3.0, 2.0, 0.0);
     points3D.emplace_back(2.5, -1.0, 0.0);
-    points3D.emplace_back(1.5, -1.2, 0.0);
+    //points3D.emplace_back(1.5, -1.2, 0.0);
 
     //camera model
     poselib::Camera camera;
@@ -107,7 +107,7 @@ int main(){
     Eigen::Vector3d X3 = points3D[2];
 
     //vector from points3D[3] to points3D[4]
-    Eigen::Vector3d V4 = (points3D[4] - points3D[3]).normalized();
+    Eigen::Vector3d V4 = (points3D[0] - points3D[3]).normalized();
     //point X4
     Eigen::Vector3d X4 = points3D[3];
 
@@ -126,7 +126,7 @@ int main(){
     //points2D[1] to points2D[2]
     lines2D.emplace_back(points2D[3], points2D[2]);
     //points2D[3] to points2D[4]
-    lines2D.emplace_back(points2D[4], points2D[3]);
+    lines2D.emplace_back(points2D[0], points2D[3]);
 
 
     //estimate absolute pose using LO-RANSAC followed by non-linear refinement
@@ -135,7 +135,7 @@ int main(){
 
     ransac_opt.max_reproj_error = 12.0;
     ransac_opt.max_epipolar_error = 1.0;
-    ransac_opt.max_iterations = 3000.0;
+    ransac_opt.min_iterations = 1000.0;
     bundle_opt.verbose = true;
     //show ransac_opt
     std::cout << "ransac_opt:\n";
@@ -151,7 +151,19 @@ int main(){
     //start time
 
     auto start = std::chrono::high_resolution_clock::now();
-    poselib::RansacStats stats = poselib::estimate_absolute_pose_pnpl(points2D, points3D, lines2D, lines3D, camera, ransac_opt, bundle_opt, &pose, &inliers, &inliers);
+    //points2D.clear();
+    //points3D.clear();
+    auto points2D_new = points2D;
+    auto points3D_new = points3D;
+    points2D_new.erase(points2D_new.begin()+3, points2D_new.end());
+    points3D_new.erase(points3D_new.begin()+3, points3D_new.end());
+    //print points2D_new
+    std::cout << "points2D_new:\n";
+    for (auto &point2D : points2D_new) {
+        std::cout << point2D.transpose() << "\n";
+    }
+
+    poselib::RansacStats stats = poselib::estimate_absolute_pose_pnpl(points2D_new, points3D_new, lines2D, lines3D, camera, ransac_opt, bundle_opt, &pose, &inliers, &inliers);
     //stop time
     auto stop = std::chrono::high_resolution_clock::now();
     //duration in us

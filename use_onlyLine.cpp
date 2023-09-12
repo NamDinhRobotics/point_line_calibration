@@ -28,10 +28,10 @@ int main()
 
     //list 3D new ok
     std::vector<poselib::Point3D> points3D0;
-    points3D0.emplace_back(3.8, -2.5, 0.0);//A
-    points3D0.emplace_back(2.4, -1.5, 0.0);//B
-    //points3D0.emplace_back(3.2, 1.2, 0.0);//C
-    points3D0.emplace_back(4.4, 2.4, 0.4);//D
+    points3D0.emplace_back(2.3, 3.4, 2.0);//A
+    points3D0.emplace_back(4.3, -1.4, 4.0);//B
+    //points3D0.emplace_back(2.0, 1.0, 0.0);//C
+    //points3D0.emplace_back(4.4, 2.4, 0.4);//D
 
     //camera model
     poselib::Camera camera;
@@ -189,6 +189,21 @@ int main()
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     std::cout << "duration = " << duration.count() << " us\n";
 
+    //using estimate_absolute_pose
+    poselib::CameraPose pose_pnp;
+    poselib::RansacStats stats_pnp = poselib::estimate_absolute_pose(points2D0, points3D0, camera, ransac_opt, bundle_opt, &pose_pnp, &inliers);
+    std::cout << "--------------SOLVER PNP---------------\n";
+    //print the results
+    std::cout << "iterations: " << stats_pnp.iterations << " \n";
+    std::cout << "inlier_ratio: " << stats_pnp.inlier_ratio << " \n";
+    std::cout << "model_score: " << stats_pnp.model_score << " \n";
+    //pose t
+    std::cout << "pose t = " << pose_pnp.t.transpose() << "\n";
+    //pose R to quat
+    Eigen::Quaterniond q_pose_pnp(pose_pnp.R()); // world to camera
+    std::cout << "pose q = " << q_pose_pnp.coeffs().transpose() << "\n";
+
+
     //--------------------------------
     //pose ground truth
     std::cout << "pose ground truth:\n";
@@ -197,7 +212,7 @@ int main()
     Eigen::Quaterniond q_posegt(camera_pose.R()); // world to camera
     std::cout << "pose q = " << q_posegt.coeffs().transpose() << "\n";
     //----------------------------------
-    std::cout << "--------------SOLVER---------------\n";
+    std::cout << "--------------SOLVER PLL---------------\n";
     //print the results
     std::cout << "iterations: " << stats.iterations << " \n";
     std::cout << "inlier_ratio: " << stats.inlier_ratio << " \n";
@@ -226,6 +241,15 @@ int main()
     double err_q_deg = err_q*180.0/M_PI;
     std::cout << "err_q_deg = " << err_q_deg << "\n";
 
+    ////compute the translation error using PNP
+    double err_t_pnp = (camera_pose.t - pose_pnp.t).norm();
+    std::cout << "err_t_pnp = " << err_t_pnp << "\n";
+    //compute the rotation error using PNP
+    double err_q_pnp = std::acos(std::abs(q_posegt.dot(q_pose_pnp)));
+    std::cout << "err_q_pnp = " << err_q_pnp << "\n";
+    //err_q to degree
+    double err_q_deg_pnp = err_q_pnp*180.0/M_PI;
+    std::cout << "err_q_deg_pnp = " << err_q_deg_pnp << "\n";
 
     //using Opencv PnP
     std::cout << "--------------Opencv PnP---------------\n";
