@@ -43,7 +43,7 @@ int main()
 
     //Rotation matrix from roll, pitch, yaw
     Eigen::Vector3d rpy;
-    rpy << M_PI_2+0.2, 0.05, M_PI_2-0.1; //roll, pitch, yaw from world to camera
+    rpy << M_PI_2+0.5, -0.1, M_PI_2-0.3; //roll, pitch, yaw from world to camera
     //convert to quaternion
     Eigen::Quaterniond q = Eigen::AngleAxisd(rpy[0], Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(rpy[1], Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(rpy[2], Eigen::Vector3d::UnitZ());
     //print roll, pitch, yaw from q
@@ -53,7 +53,7 @@ int main()
     std::cout << "q = " << q.coeffs().transpose() << "\n";
     //translation vector
     Eigen::Vector3d t;
-    t << -4.0, -0.0, 0.5;
+    t << -5.0, -0.0, 0.5;
     //camera pose
     poselib::CameraPose camera_pose{q.toRotationMatrix(), t};
     //print camera pose
@@ -77,8 +77,8 @@ int main()
         camera.project(point2D_unit, &point2D);
         //add noise to point2D randomly from 1-20
         //auto random = (double)rand() / RAND_MAX;
-        point2D[0] += 1.0*d(gen);
-        point2D[1] += 1.0*d(gen);
+        point2D[0] += 5.0*d(gen);
+        point2D[1] += 5.0*d(gen);
         points2D.push_back(point2D);
         //print point2D
         std::cout << "random " << 5*d(gen) <<" point2D = " << point2D.transpose() << "\n";
@@ -96,8 +96,8 @@ int main()
         //project point2D_unit to image plane
         camera.project(point2D_unit, &point2);
         //add noise to point2D randomly from 1-20
-        point2[0] += 1.0*d(gen);
-        point2[1] += 1.0*d(gen);
+        point2[0] += 5.0*d(gen);
+        point2[1] += 5.0*d(gen);
         points2D0.push_back(point2);
     }
     //make three 3D lines from three 3D points
@@ -129,9 +129,9 @@ int main()
     lines3D.emplace_back(X_ED, V_ED);
 
     //add line AD
-    lines3D.emplace_back(X_AD, V_AD);
+    //lines3D.emplace_back(X_AD, V_AD);
     //add line HE
-    lines3D.emplace_back(X_HE, V_HE);
+    //lines3D.emplace_back(X_HE, V_HE);
 
     //make three 2D lines from three 2D points
     std::vector<poselib::Line2D> lines2D;
@@ -144,19 +144,19 @@ int main()
     //E to D
     lines2D.emplace_back(points2D[3], points2D[4]);
     //add line AD
-    lines2D.emplace_back(points2D[3], points2D[0]);
+    //lines2D.emplace_back(points2D[3], points2D[0]);
     //add line HE
-    lines2D.emplace_back(points2D[4], points2D[7]);
+    //lines2D.emplace_back(points2D[4], points2D[7]);
 
 
     //estimate absolute pose using LO-RANSAC followed by non-linear refinement
     poselib::RansacOptions ransac_opt;
     poselib::BundleOptions bundle_opt;
 
-    ransac_opt.max_reproj_error = 1.0;
+    ransac_opt.max_reproj_error = 12.0;
     ransac_opt.max_epipolar_error = 0.1;
     //ransac_opt.max_iterations = 3000.0;
-    ransac_opt.min_iterations = 10000;
+    ransac_opt.min_iterations = 1000;
     bundle_opt.verbose = true;
     //show ransac_opt
     std::cout << "ransac_opt:\n";
