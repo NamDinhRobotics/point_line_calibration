@@ -73,6 +73,4 @@ int main()
     cv::imshow("img and img_undistort", img_show);
     //wait for key press
     cv::waitKey(0);
-
-
 }

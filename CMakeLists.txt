@@ -26,3 +26,6 @@ target_link_libraries(test_robust_p3ll PRIVATE PoseLib::PoseLib)
 
 add_executable(test_undistor test_undistor.cpp)
 target_link_libraries(test_undistor PRIVATE PoseLib::PoseLib ${OpenCV_LIBS})
+
+add_executable(test_use_only_line use_onlyLine.cpp)
+target_link_libraries(test_use_only_line PRIVATE PoseLib::PoseLib ${OpenCV_LIBS})

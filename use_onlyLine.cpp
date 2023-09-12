@@ -1,5 +1,5 @@
 //
-// Created by dinhnambkhn on 29/08/2023.
+// Created by dinhnambkhn on 12/09/2023.
 //
 #include <iostream>
 #include "PoseLib/poselib.h"
@@ -9,33 +9,19 @@
 #include <chrono>
 
 //camera OpenCVCameraModel: fx = , fy, cx, cy, k1, k2, p1, p2
-//%YAML:1.0
-//---
-//model_type: PINHOLE
-//camera_name: camera
-//image_width: 1280
-//image_height: 800
-//distortion_parameters:
-//   k1: 0.138281
-//   k2: 0.025172
-//   p1: -0.030963
-//   p2: 0.005019
-//projection_parameters:
-//   fx: 304.007121
-//   fy: 304.078429
-//   cx: 638.469054
-//   cy: 399.956311
-
-
-int main(){
-
+int main()
+{
     //list of points in 3D
     std::vector<poselib::Point3D> points3D;
-    points3D.emplace_back(1.0, 2.0, 0.0);
-    points3D.emplace_back(2.0, -1.0, 0.0);
-    points3D.emplace_back(3.0, 2.0, 0.0);
-    points3D.emplace_back(2.5, -1.0, 0.0);
-    points3D.emplace_back(1.5, -1.2, 0.0);
+    points3D.emplace_back(2.0, -2.0, 0.0);//A
+    points3D.emplace_back(2.0, -1.0, 0.0);//B
+    points3D.emplace_back(2.0, 1.0, 0.0);//C
+    points3D.emplace_back(2.0, 2.0, 0.0);//D
+
+    points3D.emplace_back(-2.0,2.0, 0.0);//E
+    points3D.emplace_back(-2.0,1.0, 0.0);//F
+    points3D.emplace_back(-2.0,-1.0, 0.0);//G
+    points3D.emplace_back(-2.0,-2.0, 0.0);//H
 
     //camera model
     poselib::Camera camera;
@@ -44,7 +30,6 @@ int main(){
     camera.height = 800;
     // set params to 304.007121, 304.078429, 638.469054, 399.956311, 0.138281, 0.025172, -0.030963, 0.005019;
     camera.params = {304.007121, 304.078429, 638.469054, 399.956311, 0.138281, 0.025172, -0.030963, 0.005019};
-
 
     //Rotation matrix from roll, pitch, yaw
     Eigen::Vector3d rpy;
@@ -58,7 +43,7 @@ int main(){
     std::cout << "q = " << q.coeffs().transpose() << "\n";
     //translation vector
     Eigen::Vector3d t;
-    t << -1.0, -2.0, -0.5;
+    t << -4.0, -0.0, 0.5;
     //camera pose
     poselib::CameraPose camera_pose{q.toRotationMatrix(), t};
     //print camera pose
@@ -86,40 +71,33 @@ int main(){
     }
     //make three 3D lines from three 3D points
     std::vector<poselib::Line3D> lines3D;
-    //vector from points3D[0] to points3D[1]
-    Eigen::Vector3d V1 = (points3D[1] - points3D[0]).normalized();
-    //point X1
-    Eigen::Vector3d X1 = points3D[0];
-    //vector from points3D[1] to points3D[2]
-    Eigen::Vector3d V2 = (points3D[2] - points3D[1]).normalized();
-    //point X2
-    Eigen::Vector3d X2 = points3D[1];
-    //vector from points3D[2] to points3D[3]
-    Eigen::Vector3d V3 = (points3D[3] - points3D[2]).normalized();
-    //point X3
-    Eigen::Vector3d X3 = points3D[2];
-
-    //vector from points3D[3] to points3D[4]
-    Eigen::Vector3d V4 = (points3D[4] - points3D[3]).normalized();
-    //point X4
-    Eigen::Vector3d X4 = points3D[3];
-
-    //make three 3D lines
-    lines3D.emplace_back(X1, V1);
-    lines3D.emplace_back(X2, V2);
-    lines3D.emplace_back(X3, V3);
-    lines3D.emplace_back(X4, V4);
-
+    //line from H to A
+    Eigen::Vector3d V_HA = points3D[0] - points3D[7];
+    Eigen::Vector3d X_HA = points3D[7];
+    //G to B
+    Eigen::Vector3d V_GB = points3D[1] - points3D[6];
+    Eigen::Vector3d X_GB = points3D[6];
+    //F to C
+    Eigen::Vector3d V_FC = points3D[2] - points3D[5];
+    Eigen::Vector3d X_FC = points3D[5];
+    //E to D
+    Eigen::Vector3d V_ED = points3D[3] - points3D[4];
+    Eigen::Vector3d X_ED = points3D[4];
+    //push back to lines3D
+    lines3D.emplace_back(X_HA, V_HA);
+    lines3D.emplace_back(X_GB, V_GB);
+    lines3D.emplace_back(X_FC, V_FC);
+    lines3D.emplace_back(X_ED, V_ED);
     //make three 2D lines from three 2D points
     std::vector<poselib::Line2D> lines2D;
-    //points2D[0] to points2D[1]
-    lines2D.emplace_back(points2D[1], points2D[0]);
-    //points2D[0] to points2D[2]
-    lines2D.emplace_back(points2D[2], points2D[1]);
-    //points2D[1] to points2D[2]
-    lines2D.emplace_back(points2D[3], points2D[2]);
-    //points2D[3] to points2D[4]
-    lines2D.emplace_back(points2D[4], points2D[3]);
+    //line from H to A
+    lines2D.emplace_back(points2D[0], points2D[7]);
+    //G to B
+    lines2D.emplace_back(points2D[1], points2D[6]);
+    //F to C
+    lines2D.emplace_back(points2D[2], points2D[5]);
+    //E to D
+    lines2D.emplace_back(points2D[3], points2D[4]);
 
 
     //estimate absolute pose using LO-RANSAC followed by non-linear refinement
@@ -141,9 +119,28 @@ int main(){
     poselib::CameraPose pose;
     std::vector<char> inliers;
     //start time
+    //only take use point B, C
+    std::vector<poselib::Point3D> points3D_new;
+    points3D_new.push_back(points3D[0]);
+    points3D_new.push_back(points3D[1]);
+
+    //point2D B, C
+    std::vector<poselib::Point2D> points2D_new;
+    points2D_new.push_back(points2D[0]);
+    points2D_new.push_back(points2D[1]);
+    //print points3D and points2D
+    std::cout << "points3D:\n";
+    for (auto &point3D : points3D) {
+        std::cout << point3D.transpose() << "\n";
+    }
+    std::cout << "points2D:\n";
+    for (auto &point2D : points2D) {
+        std::cout << point2D.transpose() << "\n";
+    }
+    //start time
 
     auto start = std::chrono::high_resolution_clock::now();
-    poselib::RansacStats stats = poselib::estimate_absolute_pose_pnpl(points2D, points3D, lines2D, lines3D, camera, ransac_opt, bundle_opt, &pose, &inliers, &inliers);
+    poselib::RansacStats stats = poselib::estimate_absolute_pose_pnpl(points2D_new, points3D_new, lines2D, lines3D, camera, ransac_opt, bundle_opt, &pose, &inliers, &inliers);
     //stop time
     auto stop = std::chrono::high_resolution_clock::now();
     //duration in us
@@ -151,33 +148,6 @@ int main(){
     std::cout << "duration = " << duration.count() << " us\n";
 
     //--------------------------------
-    std::cout << "-----------------------------\n";
-    //summary
-    std::cout << "summary:\n";
-    //3D points
-    std::cout << "3D points:\n";
-    for (auto &point3D : points3D) {
-        std::cout << point3D.transpose() << "\n";
-    }
-    //3D lines
-    std::cout << "3D lines:\n";
-    for (auto &line3D : lines3D) {
-        std::cout << line3D.X1.transpose() << " " << line3D.X2.transpose() << "\n";
-    }
-    //2D points
-    std::cout << "2D points:\n";
-    for (auto &point2D : points2D) {
-        std::cout << point2D.transpose() << "\n";
-    }
-    //2D lines
-    std::cout << "2D lines:\n";
-    for (auto &line2D : lines2D) {
-        std::cout << line2D.x1.transpose() << " " << line2D.x2.transpose() << "\n";
-    }
-    //camera
-    std::cout << "camera intrinsic mode:\n";
-    std::cout << camera.params[0] << " " << camera.params[1] << " " << camera.params[2] << " " << camera.params[3] << " " << camera.params[4] << " " << camera.params[5] << " " << camera.params[6] << " " << camera.params[7] << "\n";
-
     //pose ground truth
     std::cout << "pose ground truth:\n";
     std::cout << "pose t = " << camera_pose.t.transpose() << "\n";
@@ -217,3 +187,4 @@ int main(){
     return 0;
 
 }
+
