@@ -30,7 +30,7 @@ int main()
     std::vector<poselib::Point3D> points3D0;
     points3D0.emplace_back(3.8, -2.5, 0.0);//A
     points3D0.emplace_back(2.4, -1.5, 0.0);//B
-    points3D0.emplace_back(3.2, 1.2, 0.0);//C
+    //points3D0.emplace_back(3.2, 1.2, 0.0);//C
     points3D0.emplace_back(4.4, 2.4, 0.4);//D
 
     //camera model
@@ -53,7 +53,7 @@ int main()
     std::cout << "q = " << q.coeffs().transpose() << "\n";
     //translation vector
     Eigen::Vector3d t;
-    t << -5.0, -0.0, 0.5;
+    t << -4.5, -1.2, 0.5;
     //camera pose
     poselib::CameraPose camera_pose{q.toRotationMatrix(), t};
     //print camera pose
